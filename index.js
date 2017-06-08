@@ -1,34 +1,11 @@
 'use strict';
-
-/*
-- Relay, active low
-Pins should be digital out
-in1, pin7, gpio 4
-in2, pin9, gpio 17
-in3, pin11, gpio 27
-in4, pin 13, gpio 22
-
-- Led, active high (digital out)
-pin 16, gpio 23
-
-- Button,  pulled high, active low (digital in)
-pin 40, gpio 21
-
-- Button, pulled low, active high (digital in)
-pin 38, gpio 20
-
-- Potentiometer (analog in)
-pin 12, gpio 18
-
-- Motion sensor (digital in)
-pin 37, gpio 26 
-*/
-
 const Cleanup = require('./cleanup');
 const gpio = require('rpi-gpio');
 
+// use raspberry pi pin numbering
 gpio.setMode(gpio.MODE_RPI);
 
+// define pins
 const pinButtonActiveHigh = 40;
 const pinButtonActiveLow = 38;
 const pinLed = 16;
@@ -39,6 +16,8 @@ const pinRelay3 = 13;
 const pinRelay4 = 15;
 const pinRelays = [pinRelay1, pinRelay2, pinRelay3, pinRelay4];
 
+// utility function to blink led x times at y delay - used from 
+// buttons
 const blinkLed = (times, delay) => {
     let counter = 0;
     const blink = () => {
@@ -57,6 +36,7 @@ const blinkLed = (times, delay) => {
     blink();
 }
 
+// setup led and relay pins as outputs
 gpio.setup(pinLed,  gpio.DIR_OUT, () => {
     console.log('Initialized led...');
     gpio.write(pinLed, false, (err) => {
@@ -69,6 +49,7 @@ pinRelays.forEach(pin => {
         });
 });
 
+// listen for changes on inputs and define inputs
 gpio.on('change', function(channel, value) {
     if (channel === pinButtonActiveLow) {
         console.log("button active low pressed");
@@ -85,7 +66,7 @@ gpio.setup(pinButtonActiveHigh, gpio.DIR_IN, gpio.EDGE_RISING);
 gpio.setup(pinButtonActiveLow, gpio.DIR_IN, gpio.EDGE_FALLING);
 gpio.setup(pinMotion, gpio.DIR_IN, gpio.EDGE_FALLING);
 
-
+// toggle relay on and off every 2 seconds
 let state = true;
 const toggle = () => {
     state = !state;
@@ -98,7 +79,6 @@ const delayed = () => {
     global.setTimeout(toggle, 2000);
 }
 delayed();
-
 
 // setup termination listener
 Cleanup(() => {
