@@ -27,10 +27,17 @@ pin 37, gpio 26
 const Cleanup = require('./cleanup');
 const gpio = require('rpi-gpio');
 
-const pinButtonActiveHigh = 21;
-const pinButtonActiveLow = 20;
-const pinLed = 23;
-const pinMotion = 26;
+gpio.setMode(gpio.MODE_RPI);
+
+const pinButtonActiveHigh = 40;
+const pinButtonActiveLow = 38;
+const pinLed = 16;
+const pinMotion = 37;
+const pinRelay1 = 7;
+const pinRelay2 = 11;
+const pinRelay3 = 13;
+const pinRelay4 = 15;
+const pinRelays = [pinRelay1, pinRelay2, pinRelay3, pinRelay4];
 
 const blinkLed = (times, delay) => {
     let counter = 0;
@@ -47,36 +54,53 @@ const blinkLed = (times, delay) => {
             }
         });
     }
+    blink();
 }
 
-gpio.setup(pinButtonActiveHigh, gpio.DIR_IN, () => {
-    gpio.read(pinButtonActiveHigh, function(err, value) {
-        console.log('Button, active HIGH value is: ' + value);
-    });
-});
-gpio.setup(pinButtonActiveLow, gpio.DIR_IN, () => {
-    gpio.read(pinButtonActiveLow, function(err, value) {
-        console.log('Button, active LOW value is: ' + value);
-    });
-});
 gpio.setup(pinLed,  gpio.DIR_OUT, () => {
+    console.log('Initialized led...');
     gpio.write(pinLed, false, (err) => {
         console.log('Initialized led to off...');
     })
 });
+pinRelays.forEach(pin => {
+        gpio.setup(pin, gpio.DIR_OUT, () => {
+                gpio.write(pin, true);
+        });
+});
 
 gpio.on('change', function(channel, value) {
-    console.log('Channel ' + channel + ' value is now ' + value);
     if (channel === pinButtonActiveLow) {
+        console.log("button active low pressed");
         blinkLed(2, 200);
     } else if (channel === pinButtonActiveHigh) {
+        console.log("button active high pressed");
         blinkLed(1, 200);
+    } else if (channel === pinMotion) {
+        console.log("motion...");
+        blinkLed(5, 100);
     }
 });
-gpio.setup(pinButtonActiveHigh, gpio.DIR_IN, gpio.EDGE_BOTH);
-gpio.setup(pinButtonActiveLow, gpio.DIR_IN, gpio.EDGE_BOTH);
+gpio.setup(pinButtonActiveHigh, gpio.DIR_IN, gpio.EDGE_RISING);
+gpio.setup(pinButtonActiveLow, gpio.DIR_IN, gpio.EDGE_FALLING);
+gpio.setup(pinMotion, gpio.DIR_IN, gpio.EDGE_FALLING);
+
+
+let state = true;
+const toggle = () => {
+    state = !state;
+    pinRelays.forEach(pin => {
+        gpio.write(pin, state);
+    });
+    delayed();
+}
+const delayed = () => {
+    global.setTimeout(toggle, 2000);
+}
+delayed();
+
 
 // setup termination listener
-Cleanup((gpio) => {
+Cleanup(() => {
     gpio.destroy();
 });
