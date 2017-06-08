@@ -1,6 +1,6 @@
 'use strict';
 
-exports.Cleanup = function Cleanup(callback) {
+module.exports = function Cleanup(callback) {
 
     // attach user callback to the process event emitter
     // if no callback, it will still exit gracefully on Ctrl-C
